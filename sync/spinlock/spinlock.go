@@ -2,7 +2,7 @@ package spinlock
 
 import (
 	"runtime"
-	"sync/atomic"
+	"sync/rosfunxyk/Reactor/atomic"
 )
 
 type SpinLock struct {
