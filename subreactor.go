@@ -26,3 +26,17 @@ func (s *subreactor) OnMessage(c *connection.Connection, ctx interface{}, data [
 func (s *subreactor) OnClose(c *connection.Connection) {
 	//log.Println("OnClose")
 }
+
+func (s *subreactor) Stop() {
+	//log.Println("OnClose")
+	s.loop.Stop()
+}
+
+// New 创建一个 EventLoop
+func New(handler Handler, opts ...Option) (subreactor *subreactor, err error) {
+	if err != nil {
+		return nil, err
+	}
+	subreactor.loop, err = eventloop.New()
+	return subreactor, err
+}

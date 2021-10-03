@@ -22,9 +22,10 @@ type Handler interface {
 
 // Server gev Server
 type Server struct {
-	loop      *eventloop.EventLoop
-	workLoops []*eventloop.EventLoop
-	callback  Handler
+	loop       *eventloop.EventLoop
+	thread_num int
+	workLoops  []*subreactor
+	callback   Handler
 
 	opts    *Options
 	running atomic.Bool
@@ -57,7 +58,7 @@ func NewServer(handler Handler, opts ...Option) (server *Server, err error) {
 		server.opts.NumLoops = runtime.NumCPU()
 	}
 
-	wloops := make([]*eventloop.EventLoop, server.opts.NumLoops)
+	wloops := make([]*subreactor, server.opts.NumLoops)
 	for i := 0; i < server.opts.NumLoops; i++ {
 		l, err := eventloop.New()
 		if err != nil {
@@ -76,7 +77,7 @@ func NewServer(handler Handler, opts ...Option) (server *Server, err error) {
 func (s *Server) handleNewConnection(fd int, sa unix.Sockaddr) {
 	loop := s.opts.Strategy(s.workLoops)
 
-	c := connection.New(fd, loop, sa)
+	c := connection.New(fd, loop, sa, s.callback)
 
 	loop.QueueInLoop(func() {
 		s.callback.OnConnect(c)
