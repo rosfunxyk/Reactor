@@ -31,6 +31,7 @@ type Connection struct {
 	writeHandler_ CallBack
 	errorHandler_ CallBack
 	connHandler_  CallBack
+	callBack      CallBack
 	loop          *eventloop.EventLoop
 	peerAddr      string
 	ctx           interface{}
