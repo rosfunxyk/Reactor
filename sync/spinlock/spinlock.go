@@ -1,8 +1,8 @@
 package spinlock
 
 import (
-	"Reactor/atomic"
 	"runtime"
+	"sync/atomic"
 )
 
 type SpinLock struct {

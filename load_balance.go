@@ -1,6 +1,6 @@
 package Reactor
 
-import "Reactor/eventloop"
+import "Project/Reactor/eventloop"
 
 type LoadBalanceStrategy func([]*eventloop.EventLoop) *eventloop.EventLoop
 

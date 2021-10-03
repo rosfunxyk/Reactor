@@ -1,14 +1,15 @@
 package Reactor
 
 import (
+	"Project/Reactor/sync"
 	"errors"
 	"runtime"
 
-	"Reactor/connection"
-	"Reactor/eventloop"
-	"Reactor/listener"
-	"Reactor/log"
-	"Reactor/sync/atomic"
+	"Project/Reactor/connection"
+	"Project/Reactor/eventloop"
+	"Project/Reactor/listener"
+	"Project/Reactor/log"
+	"Project/Reactor/sync/atomic"
 
 	"golang.org/x/sys/unix"
 )
@@ -83,4 +84,18 @@ func (s *Server) handleNewConnection(fd int, sa unix.Sockaddr) {
 			log.Error("[AddSocketAndEnableRead]", err)
 		}
 	})
+}
+
+// Start 启动 Server
+func (s *Server) Start() {
+	sw := sync.WaitGroupWrapper{}
+
+	length := len(s.workLoops)
+	for i := 0; i < length; i++ {
+		sw.AddAndRun(s.workLoops[i].RunLoop)
+	}
+
+	sw.AddAndRun(s.loop.RunLoop)
+	s.running.Set(true)
+	sw.Wait()
 }

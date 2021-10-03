@@ -3,10 +3,10 @@ package eventloop
 import (
 	"unsafe"
 
-	"github.com/rosfunxyk/Reactor/log"
-	"github.com/rosfunxyk/Reactor/poller"
-	"github.com/rosfunxyk/Reactor/sync/atomic"
-	"github.com/rosfunxyk/Reactor/sync/spinlock"
+	"Project/Reactor/log"
+	"Project/Reactor/poller"
+	"Project/Reactor/sync/atomic"
+	"Project/Reactor/sync/spinlock"
 )
 
 var (
@@ -81,6 +81,18 @@ func (l *EventLoop) DeleteFdInLoop(fd int) {
 	}
 	delete(l.sockets, fd)
 	l.ConnCunt.Add(-1)
+}
+
+// AddSocketAndEnableRead 增加 Socket 到事件循环中，并注册可读事件
+func (l *EventLoop) AddSocketAndEnableRead(fd int, s Socket) error {
+	l.sockets[fd] = s
+	if err := l.poll.AddRead(fd); err != nil {
+		delete(l.sockets, fd)
+		return err
+	}
+
+	l.ConnCunt.Add(1)
+	return nil
 }
 
 // EnableReadWrite 注册可读可写事件
