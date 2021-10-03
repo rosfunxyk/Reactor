@@ -3,16 +3,29 @@
 package poller
 
 import (
+	"errors"
 	"runtime"
 
-	"atomic"
+	"github.com/rosfunxyk/Reactor/sync/atomic"
 
-	"github.com/Reactor/log"
+	"github.com/rosfunxyk/Reactor/log"
 	"golang.org/x/sys/unix"
 )
 
 const readEvent = unix.EPOLLIN | unix.EPOLLPRI
 const writeEvent = unix.EPOLLOUT
+
+var ErrClosed = errors.New("err connection closed")
+
+type Event uint32
+
+// Event poller 返回事件值
+const (
+	EventRead  Event = 0x1
+	EventWrite Event = 0x2
+	EventErr   Event = 0x80
+	EventNone  Event = 0
+)
 
 // Poller Epoll封装
 type Poller struct {
@@ -137,7 +150,7 @@ func (ep *Poller) Poll(handler func(fd int, event Event)) {
 		close(ep.waitDone)
 	}()
 
-	events := make([]unix.EpollEvent, 4096)
+	events := make([]unix.EpollEvent, 1024)
 	var (
 		wake bool
 		msec int
@@ -189,4 +202,8 @@ func (ep *Poller) Poll(handler func(fd int, event Event)) {
 			events = make([]unix.EpollEvent, n*2)
 		}
 	}
+}
+
+func (ep *Poller) GetEventsRequest(eventnums int) {
+
 }

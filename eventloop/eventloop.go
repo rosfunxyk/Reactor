@@ -3,9 +3,10 @@ package eventloop
 import (
 	"unsafe"
 
-	"github.com/Allenxuxu/gev/poller"
-	"github.com/Allenxuxu/toolkit/sync/atomic"
-	"github.com/Allenxuxu/toolkit/sync/spinlock"
+	"github.com/rosfunxyk/Reactor/log"
+	"github.com/rosfunxyk/Reactor/poller"
+	"github.com/rosfunxyk/Reactor/sync/atomic"
+	"github.com/rosfunxyk/Reactor/sync/spinlock"
 )
 
 var (
@@ -41,4 +42,111 @@ type eventLoopLocal struct {
 	taskQueueR []func()
 
 	UserBuffer *[]byte
+}
+
+// New 创建一个 EventLoop
+func New() (*EventLoop, error) {
+	p, err := poller.Create()
+	if err != nil {
+		return nil, err
+	}
+
+	userBuffer := make([]byte, DefaultBufferSize)
+	return &EventLoop{
+		eventLoopLocal: eventLoopLocal{
+			poll:       p,
+			packet:     make([]byte, DefaultPacketSize),
+			sockets:    make(map[int]Socket),
+			UserBuffer: &userBuffer,
+			needWake:   atomic.New(true),
+			taskQueueW: make([]func(), 0, DefaultTaskQueueSize),
+			taskQueueR: make([]func(), 0, DefaultTaskQueueSize),
+		},
+	}, nil
+}
+
+// PacketBuf 内部使用，临时缓冲区
+func (l *EventLoop) PacketBuf() []byte {
+	return l.packet
+}
+
+func (l *EventLoop) ConnectionCount() int64 {
+	return l.ConnCunt.Get()
+}
+
+// DeleteFdInLoop 删除 fd
+func (l *EventLoop) DeleteFdInLoop(fd int) {
+	if err := l.poll.Del(fd); err != nil {
+		log.Error("[DeleteFdInLoop]", err)
+	}
+	delete(l.sockets, fd)
+	l.ConnCunt.Add(-1)
+}
+
+// EnableReadWrite 注册可读可写事件
+func (l *EventLoop) EnableReadWrite(fd int) error {
+	return l.poll.EnableReadWrite(fd)
+}
+
+// EnableRead 只注册可写事件
+func (l *EventLoop) EnableRead(fd int) error {
+	return l.poll.EnableRead(fd)
+}
+
+// RunLoop 启动事件循环
+func (l *EventLoop) RunLoop() {
+	l.poll.Poll(l.handlerEvent)
+}
+
+// Stop 关闭事件循环
+func (l *EventLoop) Stop() error {
+	l.QueueInLoop(func() {
+		for _, v := range l.sockets {
+			if err := v.Close(); err != nil {
+				log.Error(err)
+			}
+		}
+		l.sockets = nil
+	})
+
+	_ = l.ConnCunt.Swap(0)
+	return l.poll.Close()
+}
+
+// QueueInLoop 添加 func 到事件循环中执行
+func (l *EventLoop) QueueInLoop(f func()) {
+	l.mu.Lock()
+	l.taskQueueW = append(l.taskQueueW, f)
+	l.mu.Unlock()
+
+	if l.needWake.CompareAndSwap(true, false) {
+		if err := l.poll.Wake(); err != nil {
+			log.Error("QueueInLoop Wake loop, ", err)
+		}
+	}
+}
+
+func (l *EventLoop) handlerEvent(fd int, events poller.Event) {
+	if fd != -1 {
+		s, ok := l.sockets[fd]
+		if ok {
+			s.HandleEvent(fd, events)
+		}
+	} else {
+		l.needWake.Set(true)
+		l.doPendingFunc()
+	}
+}
+
+func (l *EventLoop) doPendingFunc() {
+	l.mu.Lock()
+	l.taskQueueW, l.taskQueueR = l.taskQueueR, l.taskQueueW
+	l.mu.Unlock()
+
+	length := len(l.taskQueueR)
+	for i := 0; i < length; i++ {
+		l.taskQueueR[i]()
+	}
+
+	l.taskQueueR = l.taskQueueR[:0]
 }

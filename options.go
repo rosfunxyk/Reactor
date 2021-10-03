@@ -11,7 +11,6 @@ type Options struct {
 	Network   string
 	Address   string
 	NumLoops  int
-	ReusePort bool
 	IdleTime  time.Duration
 	Protocol  connection.Protocol
 	Strategy  LoadBalanceStrategy
