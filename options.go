@@ -3,17 +3,17 @@ package Reactor
 import (
 	"time"
 
-	"github.com/rosfunxyk/Reactor/connection"
+	"Reactor/connection"
 )
 
 // Options 服务配置
 type Options struct {
-	Network   string
-	Address   string
-	NumLoops  int
-	IdleTime  time.Duration
-	Protocol  connection.Protocol
-	Strategy  LoadBalanceStrategy
+	Network  string
+	Address  string
+	NumLoops int
+	IdleTime time.Duration
+	Protocol connection.Protocol
+	Strategy LoadBalanceStrategy
 
 	tick                        time.Duration
 	wheelSize                   int64

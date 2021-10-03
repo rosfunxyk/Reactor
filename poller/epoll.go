@@ -6,9 +6,10 @@ import (
 	"errors"
 	"runtime"
 
-	"github.com/rosfunxyk/Reactor/sync/atomic"
+	"Reactor/sync/atomic"
 
-	"github.com/rosfunxyk/Reactor/log"
+	"Reactor/log"
+
 	"golang.org/x/sys/unix"
 )
 

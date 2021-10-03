@@ -5,9 +5,10 @@ import (
 	"net"
 	"os"
 
-	"sync/rosfunxyk/Reactor/eventloop"
-	"sync/rosfunxyk/Reactor/log"
-	"sync/rosfunxyk/Reactor/poller"
+	"Reactor/eventloop"
+	"Reactor/log"
+	"Reactor/poller"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -27,9 +28,9 @@ type Listener struct {
 func New(network, addr string, loop *eventloop.EventLoop, handlerConn HandleConnFunc) (*Listener, error) {
 	var listener net.Listener
 	var err error
-	
+
 	listener, err = net.Listen(network, addr)
-	
+
 	if err != nil {
 		return nil, err
 	}

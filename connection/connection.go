@@ -3,8 +3,8 @@ package connection
 import (
 	"errors"
 
-	"github.com/rosfunxyk/Reactor/eventloop"
-	"github.com/rosfunxyk/Reactor/sync/atomic"
+	"Reactor/eventloop"
+	"Reactor/sync/atomic"
 )
 
 type CallBack interface {
