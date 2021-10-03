@@ -48,6 +48,7 @@ func New(fd int,
 		peerAddr:  sockAddrToString(sa),
 		outBuffer: []byte{},
 		inBuffer:  []byte{},
+		callBack:  callBack,
 		loop:      loop,
 		buffer:    []byte{},
 	}
@@ -157,7 +158,7 @@ func (c *Connection) HandleEvent(fd int, events poller.Event) {
 func (c *Connection) handleRead(fd int) (closed bool) {
 	// TODO 避免这次内存拷贝
 	buf := c.loop.PacketBuf()
-	n, err := unix.Read(c.fd, buf)
+	n, err := unix.Read(c.fd, c.outBuffer)
 	if n == 0 || err != nil {
 		if err != unix.EAGAIN {
 			c.handleClose(fd)
@@ -173,7 +174,7 @@ func (c *Connection) handleRead(fd int) (closed bool) {
 }
 
 func (c *Connection) handleWrite(fd int) (closed bool) {
-	n, err := unix.Write(c.fd, first)
+	_, err := unix.Write(c.fd, first)
 	if err != nil {
 		if err == unix.EAGAIN {
 			return

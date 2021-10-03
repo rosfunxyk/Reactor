@@ -76,7 +76,7 @@ func NewServer(handler Handler, opts ...Option) (server *Server, err error) {
 func (s *Server) handleNewConnection(fd int, sa unix.Sockaddr) {
 	loop := s.opts.Strategy(s.workLoops)
 
-	c := connection.New(fd, loop, sa, s.opts.Protocol, s.timingWheel, s.opts.IdleTime, s.callback)
+	c := connection.New(fd, loop, sa)
 
 	loop.QueueInLoop(func() {
 		s.callback.OnConnect(c)
